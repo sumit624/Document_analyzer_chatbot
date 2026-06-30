@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document Analyzer</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family: Inter, system-ui, sans-serif;
+      }
+      body {
+        margin: 0;
+        background: linear-gradient(135deg, #07111f, #13253e);
+        color: #f4f7fb;
+        min-height: 100vh;
+      }
+      .container {
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 32px 20px 60px;
+      }
+      .card {
+        background: rgba(255,255,255,0.08);
+        border: 1px solid rgba(255,255,255,0.12);
+        border-radius: 18px;
+        padding: 24px;
+        box-shadow: 0 20px 45px rgba(0,0,0,0.25);
+      }
+      h1 { margin-top: 0; }
+      .controls { display: grid; gap: 14px; margin-top: 20px; }
+      input[type="file"], textarea, button {
+        width: 100%;
+        border-radius: 12px;
+        border: 1px solid rgba(255,255,255,0.16);
+        padding: 12px 14px;
+        font-size: 15px;
+      }
+      textarea { min-height: 100px; resize: vertical; }
+      button {
+        background: #4f8cff;
+        color: white;
+        cursor: pointer;
+        font-weight: 600;
+      }
+      .answer { margin-top: 16px; padding: 14px; border-radius: 12px; background: rgba(0,0,0,0.2); white-space: pre-wrap; }
+      .muted { color: #aac0e2; font-size: 14px; }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="card">
+        <h1>Document Analyzer</h1>
+        <p class="muted">Upload documents and chat with them using the FastAPI backend.</p>
+
+        <div class="controls">
+          <input id="fileInput" type="file" multiple />
+          <button id="uploadBtn">Upload documents</button>
+          <p id="uploadStatus" class="muted">No files uploaded yet.</p>
+
+          <textarea id="questionInput" placeholder="Ask a question about your documents..."></textarea>
+          <button id="chatBtn">Ask question</button>
+          <div id="answerBox" class="answer">Your answer will appear here.</div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const uploadBtn = document.getElementById('uploadBtn');
+      const chatBtn = document.getElementById('chatBtn');
+      const fileInput = document.getElementById('fileInput');
+      const questionInput = document.getElementById('questionInput');
+      const answerBox = document.getElementById('answerBox');
+      const uploadStatus = document.getElementById('uploadStatus');
+
+      uploadBtn.addEventListener('click', async () => {
+        const files = fileInput.files;
+        if (!files.length) {
+          uploadStatus.textContent = 'Please choose at least one file.';
+          return;
+        }
+
+        const formData = new FormData();
+        for (const file of files) formData.append('files', file);
+
+        const response = await fetch('/documents/upload', { method: 'POST', body: formData });
+        const data = await response.json();
+        uploadStatus.textContent = `Uploaded ${data.documents_uploaded} file(s): ${data.filenames.join(', ')}`;
+      });
+
+      chatBtn.addEventListener('click', async () => {
+        const message = questionInput.value.trim();
+        if (!message) {
+          answerBox.textContent = 'Please enter a question.';
+          return;
+        }
+
+        answerBox.textContent = 'Thinking...';
+        const response = await fetch('/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message })
+        });
+        const data = await response.json();
+        answerBox.textContent = data.answer;
+      });
+    </script>
+  </body>
+</html>
